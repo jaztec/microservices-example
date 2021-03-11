@@ -1,0 +1,28 @@
+syntax = "proto3";
+
+option go_package = "gitlab.jaztec.info/jaztec/microservice-example/proto";
+
+service CAManager {
+  rpc CACertificate(CertificateRequest) returns (CAResponse) {}
+  rpc Certificate(CertificateRequest) returns (CertificateResponse) {}
+  rpc ListCertificates(ListRequest) returns (ListResponse) {}
+}
+
+message ListRequest {
+  int32 type = 1;
+}
+message ListResponse {
+  repeated bytes certs = 1;
+}
+
+message CertificateRequest{
+  string host = 1;
+  int32 type = 2;
+}
+message CertificateResponse{
+  bytes cert = 1;
+  bytes key = 2;
+}
+message CAResponse {
+  bytes cert = 1;
+}

@@ -1,0 +1,34 @@
+version: "3.8"
+
+services:
+  auth_service:
+    build:
+      context: .
+      target: auth_service
+    links:
+      - client_service
+    environment:
+      CLIENT_ADDR: client_service:50051
+      LISTEN_ADDR: :9096
+    ports:
+      - 9096:9096
+    depends_on:
+      - ca_service
+  client_service:
+    build:
+      context: .
+      target: client_service
+    environment:
+      LISTEN_ADDR: :50051
+    depends_on:
+      - ca_service
+  user_service:
+    build:
+      context: .
+      target: user_service
+    depends_on:
+      - ca_service
+  ca_service:
+    build:
+      context: .
+      target: ca_service

@@ -1,0 +1,63 @@
+syntax = "proto3";
+
+import "error.proto";
+import "google/protobuf/timestamp.proto";
+
+option go_package = "gitlab.jaztec.info/jaztec/microservice-example/proto";
+
+package proto;
+
+service ClientService {
+  rpc CreateClient(CreateClientRequest) returns (CreateClientResponse) {}
+  rpc ListClients(ListClientsRequest) returns (ListClientsResponse) {}
+  rpc ClientByID(ClientByIDRequest) returns (ClientByIDResponse) {}
+}
+
+message Client {
+  string id = 1;
+  google.protobuf.Timestamp createdAt = 2;
+  google.protobuf.Timestamp updatedAt = 3;
+  google.protobuf.Timestamp deletedAt = 4;
+  int64 expiredAt = 5;
+  string code = 6;
+  string secret = 7;
+  string domain = 8;
+  string userID = 9;
+  string access = 10;
+  string refresh = 11;
+  string data = 12;
+}
+
+message CreateClientRequest {
+  int64 expiredAt = 5;
+  string code = 6;
+  string secret = 7;
+  string domain = 8;
+  string userID = 9;
+  string access = 10;
+  string refresh = 11;
+  string data = 12;
+}
+
+message CreateClientResponse {
+  Client client = 1;
+  Error error = 2;
+}
+
+message ListClientsRequest {
+
+}
+
+message ListClientsResponse {
+  repeated Client clients = 1;
+  Error error = 2;
+}
+
+message ClientByIDRequest {
+  string id = 1;
+}
+
+message ClientByIDResponse {
+  Client client = 1;
+  Error error = 2;
+}

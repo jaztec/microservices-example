@@ -1,0 +1,10 @@
+syntax = "proto3";
+
+option go_package = "gitlab.jaztec.info/jaztec/microservice-example/proto";
+
+package proto;
+
+message Error {
+  uint32 code = 1;
+  string message = 2;
+}

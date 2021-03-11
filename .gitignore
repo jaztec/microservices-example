@@ -1,0 +1,6 @@
+vendor/
+.idea/
+bin/
+var/
+
+docker-compose.override.yml
