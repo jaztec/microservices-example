@@ -49,6 +49,7 @@ func (s *Store) GetByID(ctx context.Context, id string) (oauth2.ClientInfo, erro
 }
 
 func (s *Store) Close() error {
+	log.Println("Closing store connection")
 	return s.conn.Close()
 }
 
@@ -63,8 +64,14 @@ func NewStore(addr string) (*Store, error) {
 		return nil, err
 	}
 
+	crt, _, err := caClient.Certificate(context.Background(), "auth_service", ca.Client)
+	if err != nil {
+		return nil, err
+	}
+
 	tlsConfig := &tls.Config{
-		RootCAs: certPool,
+		RootCAs:      certPool,
+		Certificates: []tls.Certificate{crt},
 	}
 
 	conn, err := grpc.Dial(addr, grpc.WithTransportCredentials(credentials.NewTLS(tlsConfig)))

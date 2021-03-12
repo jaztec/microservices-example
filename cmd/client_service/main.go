@@ -58,7 +58,7 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	cert, err := caClient.Certificate(context.Background(), "client_service", ca.Host)
+	cert, _, err := caClient.Certificate(context.Background(), "client_service", ca.Host)
 	if err != nil {
 		panic(err)
 	}
@@ -66,8 +66,8 @@ func main() {
 	tlsConfig := &tls.Config{
 		RootCAs:      certPool,
 		Certificates: []tls.Certificate{cert},
-		ClientCAs:    certPool,
-		ClientAuth:   tls.RequireAndVerifyClientCert,
+		//ClientCAs:    certPool,
+		//ClientAuth:   tls.RequireAndVerifyClientCert,
 	}
 
 	grpcServer := grpc.NewServer(grpc.Creds(credentials.NewTLS(tlsConfig)))

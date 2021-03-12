@@ -17,7 +17,7 @@ import (
 
 var (
 	allowedHosts   = []string{"client_service", "auth_service", "user_service"}
-	allowedClients = []string{"ca_service", "client_service", "auth_service", "user_service"}
+	allowedClients = []string{"ca_service", "client_service", "auth_service", "user_service", "jwt_token"}
 	issuedHosts    = []string{}
 	issuedClients  = []string{}
 )

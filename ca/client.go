@@ -33,17 +33,20 @@ func (c *CAClient) CertPool(ctx context.Context, host string) (*x509.CertPool, e
 	return pool, nil
 }
 
-func (c *CAClient) Certificate(ctx context.Context, host string, side Type) (tls.Certificate, error) {
+func (c *CAClient) Certificate(ctx context.Context, host string, side Type) (tls.Certificate, []byte, error) {
 	client := proto.NewCAManagerClient(c.conn)
 	resp, err := client.Certificate(ctx, &proto.CertificateRequest{
 		Host: host,
 		Type: int32(side),
 	})
 	if err != nil {
-		return tls.Certificate{}, fmt.Errorf("error fetching CA certificate: %w", err)
+		return tls.Certificate{}, nil, fmt.Errorf("error fetching CA certificate: %w", err)
 	}
-
-	return tls.X509KeyPair(resp.Cert, resp.Key)
+	crt, err := tls.X509KeyPair(resp.Cert, resp.Key)
+	if err != nil {
+		return tls.Certificate{}, nil, fmt.Errorf("error fetching CA certificate: %w", err)
+	}
+	return crt, resp.Key, nil
 }
 
 func (c *CAClient) Clients(ctx context.Context, t Type) (crts [][]byte, err error) {
