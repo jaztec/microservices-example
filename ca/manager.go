@@ -15,17 +15,28 @@ import (
 	"gitlab.jaztec.info/jaztec/microservice-example/proto"
 )
 
-var (
-	allowedHosts   = []string{"client_service", "auth_service", "user_service"}
-	allowedClients = []string{"ca_service", "client_service", "auth_service", "user_service", "jwt_token"}
-	issuedHosts    = []string{}
-	issuedClients  = []string{}
-)
+var ()
 
 type Type int
 
 const Client Type = 1
 const Host Type = 2
+
+type initFn func(*CAManager) error
+
+func WithAllowedHosts(hosts []string) initFn {
+	return func(m *CAManager) error {
+		m.allowedHosts = hosts
+		return nil
+	}
+}
+
+func WithAllowedClients(clients []string) initFn {
+	return func(m *CAManager) error {
+		m.allowedClients = clients
+		return nil
+	}
+}
 
 type CAManager struct {
 	ca      *x509.Certificate
@@ -35,11 +46,28 @@ type CAManager struct {
 	hosts   [][]byte
 	clients [][]byte
 
+	allowedHosts   []string
+	allowedClients []string
+	issuedHosts    []string
+	issuedClients  []string
+
 	proto.UnimplementedCAManagerServer
 }
 
-func NewCAManager() (*CAManager, error) {
-	m := &CAManager{}
+func NewCAManager(opts ...initFn) (*CAManager, error) {
+	m := &CAManager{
+		allowedHosts:   []string{},
+		allowedClients: []string{},
+		issuedHosts:    []string{},
+		issuedClients:  []string{},
+	}
+
+	for _, fn := range opts {
+		if err := fn(m); err != nil {
+			return nil, err
+		}
+	}
+
 	ca, caPem, caPriv, err := createRootCertificate()
 	if err != nil {
 		return nil, err
@@ -52,7 +80,7 @@ func NewCAManager() (*CAManager, error) {
 }
 
 func (m *CAManager) CACertificate(_ context.Context, req *proto.CertificateRequest) (*proto.CAResponse, error) {
-	if !hostAllowed(req.Host, allowedHosts) {
+	if !hostAllowed(req.Host, m.allowedHosts) {
 		return nil, fmt.Errorf("host '%s' is not allowed", req.Host)
 	}
 
@@ -82,14 +110,29 @@ func (m *CAManager) ListCertificates(_ context.Context, req *proto.ListRequest) 
 }
 
 func (m *CAManager) createCertificate(host string, t Type) (crtPem []byte, crtKey []byte, err error) {
-	log.Printf("Validate %s with type %d", host, t)
-	if err = validate(host, t); err != nil {
+	log.Printf("Requested %s with type %d", host, t)
+	if err = m.validate(host, t); err != nil {
 		return nil, nil, fmt.Errorf("%s %d validation failed: %w", host, t, err)
 	}
 
 	priv, err := rsa.GenerateKey(rand.Reader, 2048)
 	if err != nil {
 		return nil, nil, err
+	}
+
+	var keyUsage x509.KeyUsage
+	var extKeyUsage x509.ExtKeyUsage
+	switch t {
+	case Client:
+		keyUsage |= x509.KeyUsageContentCommitment
+		extKeyUsage |= x509.ExtKeyUsageClientAuth
+		m.clients = append(m.clients, crtPem)
+		m.issuedClients = append(m.issuedClients, host)
+	case Host:
+		extKeyUsage |= x509.ExtKeyUsageServerAuth
+		keyUsage |= x509.KeyUsageKeyEncipherment | x509.KeyUsageDigitalSignature
+		m.hosts = append(m.hosts, crtPem)
+		m.issuedHosts = append(m.issuedHosts, host)
 	}
 
 	template := x509.Certificate{
@@ -100,7 +143,8 @@ func (m *CAManager) createCertificate(host string, t Type) (crtPem []byte, crtKe
 		NotBefore: time.Now(),
 		NotAfter:  time.Now().Add(24 * time.Hour),
 
-		KeyUsage: x509.KeyUsageDigitalSignature | x509.KeyUsageKeyEncipherment,
+		KeyUsage:    keyUsage,
+		ExtKeyUsage: []x509.ExtKeyUsage{extKeyUsage},
 
 		BasicConstraintsValid: true,
 		DNSNames:              []string{host},
@@ -115,15 +159,6 @@ func (m *CAManager) createCertificate(host string, t Type) (crtPem []byte, crtKe
 		Type:  "RSA PRIVATE KEY",
 		Bytes: x509.MarshalPKCS1PrivateKey(priv),
 	})
-
-	switch t {
-	case Client:
-		m.clients = append(m.clients, crtPem)
-		issuedClients = append(issuedClients, host)
-	case Host:
-		m.hosts = append(m.hosts, crtPem)
-		issuedHosts = append(issuedHosts, host)
-	}
 
 	return crtPem, key, nil
 }
@@ -143,7 +178,7 @@ func createRootCertificate() (*x509.Certificate, []byte, *rsa.PrivateKey, error)
 		NotBefore:             time.Now().Add(-10 * time.Second),
 		NotAfter:              time.Now().AddDate(10, 0, 0),
 		KeyUsage:              x509.KeyUsageCertSign | x509.KeyUsageCRLSign,
-		ExtKeyUsage:           []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
+		ExtKeyUsage:           []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth, x509.ExtKeyUsageClientAuth},
 		BasicConstraintsValid: true,
 		IsCA:                  true,
 	}
@@ -173,6 +208,26 @@ func createCert(template, parent *x509.Certificate, pub *rsa.PublicKey, priv *rs
 	return crt, crtPem, nil
 }
 
+func (m *CAManager) validate(host string, side Type) error {
+	var allowed []string
+	var issued []string
+	switch side {
+	case Client:
+		allowed = m.allowedClients
+		issued = m.issuedClients
+	case Host:
+		allowed = m.allowedHosts
+		issued = m.issuedHosts
+	}
+	if !hostAllowed(host, allowed) {
+		return fmt.Errorf("host '%s' is not allowed", host)
+	}
+	if hostIssued(host, issued) {
+		return fmt.Errorf("host '%s' is already issued", host)
+	}
+	return nil
+}
+
 func hostAllowed(host string, soi []string) bool {
 	for _, n := range soi {
 		if n == host {
@@ -189,24 +244,4 @@ func hostIssued(host string, soi []string) bool {
 		}
 	}
 	return false
-}
-
-func validate(host string, side Type) error {
-	var allowed []string
-	var issued []string
-	switch side {
-	case Client:
-		allowed = allowedClients
-		issued = issuedClients
-	case Host:
-		allowed = allowedHosts
-		issued = issuedHosts
-	}
-	if !hostAllowed(host, allowed) {
-		return fmt.Errorf("host '%s' is not allowed", host)
-	}
-	if hostIssued(host, issued) {
-		return fmt.Errorf("host '%s' is already issued", host)
-	}
-	return nil
 }

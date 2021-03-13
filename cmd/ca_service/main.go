@@ -10,7 +10,10 @@ import (
 )
 
 func main() {
-	manager, err := ca.NewCAManager()
+	manager, err := ca.NewCAManager(
+		ca.WithAllowedHosts([]string{"ca_service", "client_service", "auth_service"}),
+		ca.WithAllowedClients([]string{"auth_service", "jwt_token"}),
+	)
 	if err != nil {
 		panic(err)
 	}

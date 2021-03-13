@@ -64,10 +64,9 @@ func main() {
 	}
 
 	tlsConfig := &tls.Config{
-		RootCAs:      certPool,
 		Certificates: []tls.Certificate{cert},
-		//ClientCAs:    certPool,
-		//ClientAuth:   tls.RequireAndVerifyClientCert,
+		ClientCAs:    certPool,
+		ClientAuth:   tls.RequireAndVerifyClientCert,
 	}
 
 	grpcServer := grpc.NewServer(grpc.Creds(credentials.NewTLS(tlsConfig)))
