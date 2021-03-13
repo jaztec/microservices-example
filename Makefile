@@ -26,7 +26,8 @@ build:  ## Build the binary file
 
 test: ## Test the library
 	@mkdir -p artifacts/profiles
-	go test ./... -bench=. -race -timeout 10000ms
+	go test ./... -bench=. -race -timeout 10000ms -coverprofile cover.out
+	go tool cover -func=cover.out
 
 proto-gen: ## Generate protobuf files
 	@protoc --go_out=./proto --go_opt=paths=source_relative --go-grpc_out=./proto --go-grpc_opt=paths=source_relative --proto_path=./proto proto/*.proto

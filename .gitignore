@@ -2,5 +2,6 @@ vendor/
 .idea/
 bin/
 var/
+cover.out
 
 docker-compose.override.yml
