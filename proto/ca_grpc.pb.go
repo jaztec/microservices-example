@@ -20,7 +20,6 @@ const _ = grpc.SupportPackageIsVersion7
 type CAManagerClient interface {
 	CACertificate(ctx context.Context, in *CertificateRequest, opts ...grpc.CallOption) (*CAResponse, error)
 	Certificate(ctx context.Context, in *CertificateRequest, opts ...grpc.CallOption) (*CertificateResponse, error)
-	ListCertificates(ctx context.Context, in *ListRequest, opts ...grpc.CallOption) (*ListResponse, error)
 }
 
 type cAManagerClient struct {
@@ -49,22 +48,12 @@ func (c *cAManagerClient) Certificate(ctx context.Context, in *CertificateReques
 	return out, nil
 }
 
-func (c *cAManagerClient) ListCertificates(ctx context.Context, in *ListRequest, opts ...grpc.CallOption) (*ListResponse, error) {
-	out := new(ListResponse)
-	err := c.cc.Invoke(ctx, "/CAManager/ListCertificates", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
 // CAManagerServer is the server API for CAManager service.
 // All implementations must embed UnimplementedCAManagerServer
 // for forward compatibility
 type CAManagerServer interface {
 	CACertificate(context.Context, *CertificateRequest) (*CAResponse, error)
 	Certificate(context.Context, *CertificateRequest) (*CertificateResponse, error)
-	ListCertificates(context.Context, *ListRequest) (*ListResponse, error)
 	mustEmbedUnimplementedCAManagerServer()
 }
 
@@ -77,9 +66,6 @@ func (UnimplementedCAManagerServer) CACertificate(context.Context, *CertificateR
 }
 func (UnimplementedCAManagerServer) Certificate(context.Context, *CertificateRequest) (*CertificateResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Certificate not implemented")
-}
-func (UnimplementedCAManagerServer) ListCertificates(context.Context, *ListRequest) (*ListResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method ListCertificates not implemented")
 }
 func (UnimplementedCAManagerServer) mustEmbedUnimplementedCAManagerServer() {}
 
@@ -130,24 +116,6 @@ func _CAManager_Certificate_Handler(srv interface{}, ctx context.Context, dec fu
 	return interceptor(ctx, in, info, handler)
 }
 
-func _CAManager_ListCertificates_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(ListRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(CAManagerServer).ListCertificates(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/CAManager/ListCertificates",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(CAManagerServer).ListCertificates(ctx, req.(*ListRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
 // CAManager_ServiceDesc is the grpc.ServiceDesc for CAManager service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -162,10 +130,6 @@ var CAManager_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Certificate",
 			Handler:    _CAManager_Certificate_Handler,
-		},
-		{
-			MethodName: "ListCertificates",
-			Handler:    _CAManager_ListCertificates_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

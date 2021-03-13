@@ -5,14 +5,6 @@ option go_package = "gitlab.jaztec.info/jaztec/microservice-example/proto";
 service CAManager {
   rpc CACertificate(CertificateRequest) returns (CAResponse) {}
   rpc Certificate(CertificateRequest) returns (CertificateResponse) {}
-  rpc ListCertificates(ListRequest) returns (ListResponse) {}
-}
-
-message ListRequest {
-  int32 type = 1;
-}
-message ListResponse {
-  repeated bytes certs = 1;
 }
 
 message CertificateRequest{

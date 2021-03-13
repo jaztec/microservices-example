@@ -95,20 +95,6 @@ func (m *CAManager) Certificate(_ context.Context, req *proto.CertificateRequest
 	return &proto.CertificateResponse{Cert: crt, Key: key}, nil
 }
 
-func (m *CAManager) ListCertificates(_ context.Context, req *proto.ListRequest) (*proto.ListResponse, error) {
-	var certs [][]byte
-	switch Type(req.Type) {
-	case Client:
-		certs = m.clients
-	case Host:
-		certs = m.hosts
-	default:
-		return nil, fmt.Errorf("host type %d not allowed", req.Type)
-	}
-
-	return &proto.ListResponse{Certs: certs}, nil
-}
-
 func (m *CAManager) createCertificate(host string, t Type) (crtPem []byte, crtKey []byte, err error) {
 	log.Printf("Requested %s with type %d", host, t)
 	if err = m.validate(host, t); err != nil {

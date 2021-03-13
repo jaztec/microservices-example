@@ -49,18 +49,7 @@ func (c *CAClient) Certificate(ctx context.Context, host string, side Type) (tls
 	return crt, resp.Key, nil
 }
 
-func (c *CAClient) Clients(ctx context.Context, t Type) (crts [][]byte, err error) {
-	client := proto.NewCAManagerClient(c.conn)
-	var resp *proto.ListResponse
-	resp, err = client.ListCertificates(ctx, &proto.ListRequest{Type: int32(t)})
-	if err != nil {
-		return
-	}
-	crts = resp.Certs
-	return
-}
-
-func (c *CAClient) run() error {
+func (c *CAClient) init() error {
 	conn, err := grpc.Dial("ca_service:16841", grpc.WithInsecure())
 	if err != nil {
 		return fmt.Errorf("error while dailing ca_service: %w", err)
@@ -76,7 +65,7 @@ func (c *CAClient) Close() error {
 
 func NewCAClient() (*CAClient, error) {
 	c := &CAClient{}
-	if err := c.run(); err != nil {
+	if err := c.init(); err != nil {
 		return nil, err
 	}
 	return c, nil
