@@ -43,7 +43,6 @@ CMD ["/usr/bin/app"]
 
 FROM debian:buster-slim AS user_service
 
-COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
 COPY --from=builder /etc/passwd /etc/passwd
 
 COPY --from=builder /opt/local/bin/user_service /usr/bin/app

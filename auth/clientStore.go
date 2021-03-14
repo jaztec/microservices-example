@@ -24,6 +24,7 @@ type Store struct {
 	conn     *grpc.ClientConn
 }
 
+// TODO Implement some real storage
 func (s *Store) GetByID(ctx context.Context, id string) (oauth2.ClientInfo, error) {
 	log.Printf("Fetching client with ID '%s'", id)
 

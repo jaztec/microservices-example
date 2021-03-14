@@ -19,6 +19,8 @@ import (
 	"gitlab.jaztec.info/jaztec/microservice-example/auth"
 )
 
+//.well-known/jwks.json
+
 func main() {
 	clientAddr := os.Getenv("CLIENT_ADDR")
 	if clientAddr == "" {
