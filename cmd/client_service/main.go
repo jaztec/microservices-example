@@ -49,7 +49,7 @@ func main() {
 		panic(err)
 	}
 
-	caClient, err := ca.NewCAClient()
+	caClient, err := ca.NewCAClient("client_service")
 	if err != nil {
 		panic(err)
 	}

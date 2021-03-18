@@ -32,7 +32,7 @@ func main() {
 		panic("No valid LISTEN_ADDR received")
 	}
 
-	client, err := ca.NewCAClient()
+	client, err := ca.NewCAClient("auth_service")
 	if err != nil {
 		panic(err)
 	}

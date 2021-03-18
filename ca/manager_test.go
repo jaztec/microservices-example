@@ -52,46 +52,5 @@ var _ = Describe("Manager", func() {
 			Expect(clientCert).To(Equal(crt))
 		})
 
-		It("Should setup a server communications", func(done Done) {
-			c := make(chan struct{})
-			lis, err := tls.Listen("tcp", ":29854", &tls.Config{
-				ClientCAs:    caCertPool,
-				Certificates: []tls.Certificate{serverCert},
-				ClientAuth:   tls.RequireAndVerifyClientCert,
-			})
-			go func() {
-				defer GinkgoRecover()
-				conn, err := lis.Accept()
-				if err != nil {
-					Fail("Failed accepting")
-				}
-				var b []byte
-				_, err = conn.Read(b)
-				Expect(err).ToNot(HaveOccurred())
-
-				c <- struct{}{}
-			}()
-			Expect(err).ToNot(HaveOccurred())
-			defer lis.Close()
-
-			go func() {
-				defer GinkgoRecover()
-				conn, err := tls.Dial("tcp", ":29854", &tls.Config{
-					RootCAs:      caCertPool,
-					Certificates: []tls.Certificate{clientCert},
-					ServerName:   "test_host",
-				})
-				Expect(err).ToNot(HaveOccurred())
-
-				n, err := conn.Write([]byte("test"))
-				Expect(err).ToNot(HaveOccurred())
-				Expect(n).To(Equal(4))
-
-				defer conn.Close()
-			}()
-
-			Expect(<-c).To(Equal(struct{}{}))
-			close(done)
-		})
 	})
 })

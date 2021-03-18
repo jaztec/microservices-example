@@ -55,7 +55,7 @@ func (s *Store) Close() error {
 }
 
 func NewStore(addr string) (*Store, error) {
-	caClient, err := ca.NewCAClient()
+	caClient, err := ca.NewCAClient("auth_service")
 	if err != nil {
 		return nil, err
 	}
