@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"log"
 
-	"gitlab.jaztec.info/jaztec/microservice-example/ca"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 
@@ -18,10 +17,9 @@ import (
 )
 
 type Store struct {
-	addr     string
-	caClient *ca.CAClient
-	client   proto.ClientServiceClient
-	conn     *grpc.ClientConn
+	addr   string
+	client proto.ClientServiceClient
+	conn   *grpc.ClientConn
 }
 
 // TODO Implement some real storage
@@ -54,36 +52,15 @@ func (s *Store) Close() error {
 	return s.conn.Close()
 }
 
-func NewStore(addr string) (*Store, error) {
-	caClient, err := ca.NewCAClient("auth_service")
-	if err != nil {
-		return nil, err
-	}
-
-	certPool, err := caClient.CertPool(context.Background(), "auth_service")
-	if err != nil {
-		return nil, err
-	}
-
-	crt, _, err := caClient.Certificate(context.Background(), "auth_service", ca.Client)
-	if err != nil {
-		return nil, err
-	}
-
-	tlsConfig := &tls.Config{
-		RootCAs:      certPool,
-		Certificates: []tls.Certificate{crt},
-	}
-
+func NewStore(addr string, tlsConfig *tls.Config) (*Store, error) {
 	conn, err := grpc.Dial(addr, grpc.WithTransportCredentials(credentials.NewTLS(tlsConfig)))
 	if err != nil {
 		return nil, fmt.Errorf("error dialing %s, got error: %w", addr, err)
 	}
 
 	return &Store{
-		addr:     addr,
-		caClient: caClient,
-		client:   proto.NewClientServiceClient(conn),
-		conn:     conn,
+		addr:   addr,
+		client: proto.NewClientServiceClient(conn),
+		conn:   conn,
 	}, nil
 }

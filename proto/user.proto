@@ -1,0 +1,31 @@
+syntax = "proto3";
+
+import "error.proto";
+
+option go_package = "gitlab.jaztec.info/jaztec/microservice-example/proto";
+
+package proto;
+
+service UserService {
+  rpc userByUsernamePassword(UsernamePasswordRequest) returns (UserResponse) {}
+  rpc userByID (UserByIdRequest) returns (UserResponse) {}
+}
+
+message User {
+  string userID = 1;
+  string username = 2;
+}
+
+message UsernamePasswordRequest {
+  string username = 1;
+  string password = 2;
+}
+
+message UserResponse {
+  User user = 1;
+  Error error = 2;
+}
+
+message UserByIdRequest {
+  string id = 1;
+}

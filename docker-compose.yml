@@ -10,6 +10,7 @@ services:
     environment:
       CLIENT_ADDR: client_service:50051
       LISTEN_ADDR: :9096
+      USER_ADDR: user_service:50051
     ports:
       - 9096:9096
     depends_on:

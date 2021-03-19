@@ -8,10 +8,67 @@ import (
 	"net"
 	"os"
 
+	"golang.org/x/crypto/bcrypt"
+
+	"gitlab.jaztec.info/jaztec/microservice-example/proto"
+
 	"gitlab.jaztec.info/jaztec/microservice-example/ca"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 )
+
+const (
+	userId   = "this-is-my-id"
+	username = "test"
+)
+
+var (
+	defaultResponse = &proto.UserResponse{
+		User: &proto.User{
+			UserID:   userId,
+			Username: username,
+		},
+	}
+
+	defaultErrorResponse = &proto.UserResponse{
+		Error: &proto.Error{
+			Code:    1,
+			Message: "User not found",
+		},
+	}
+)
+
+type userManager struct {
+	proto.UnimplementedUserServiceServer
+}
+
+func (m *userManager) UserByID(_ context.Context, req *proto.UserByIdRequest) (*proto.UserResponse, error) {
+	if userId != req.Id {
+		return defaultErrorResponse, nil
+	}
+
+	return defaultResponse, nil
+}
+
+func (m *userManager) UserByUsernamePassword(_ context.Context, req *proto.UsernamePasswordRequest) (*proto.UserResponse, error) {
+	password, err := bcrypt.GenerateFromPassword([]byte(username), 8)
+	if err != nil {
+		return nil, err
+	}
+
+	if req.Username != username {
+		log.Printf("Failed to assess %s is %s", req.Username, username)
+		return defaultErrorResponse, nil
+	}
+
+	if err := bcrypt.CompareHashAndPassword(password, []byte(req.Password)); err != nil {
+		// we use username as password in this example
+		log.Printf("Failed to assess %s is %s", username, req.Password)
+		return defaultErrorResponse, nil
+	}
+
+	return defaultResponse, nil
+}
 
 func main() {
 	listenAddr := flag.String("addr", ":50051", "Set the listen address for the gRPC server")
@@ -46,5 +103,8 @@ func main() {
 	}
 
 	grpcServer := grpc.NewServer(grpc.Creds(credentials.NewTLS(tlsConfig)))
+
+	manager := &userManager{}
+	proto.RegisterUserServiceServer(grpcServer, manager)
 	log.Fatal(grpcServer.Serve(lis))
 }
