@@ -1,3 +1,6 @@
+[![pipeline status](https://gitlab.jaztec.info/jaztec/microservice-example/badges/master/pipeline.svg)](https://gitlab.jaztec.info/jaztec/microservice-example/-/commits/master)
+[![coverage report](https://gitlab.jaztec.info/jaztec/microservice-example/badges/master/coverage.svg)](https://gitlab.jaztec.info/jaztec/microservice-example/-/commits/master)
+
 # Microservices example
 
 This is an experimental ground-up microservices example. It uses mTLS 
