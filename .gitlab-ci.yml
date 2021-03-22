@@ -1,3 +1,6 @@
 stages:
   - test
-  - build
+
+test:
+  script:
+    @make test
