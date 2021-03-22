@@ -63,7 +63,7 @@ func (m *userManager) UserByUsernamePassword(_ context.Context, req *proto.Usern
 
 	if err := bcrypt.CompareHashAndPassword(password, []byte(req.Password)); err != nil {
 		// we use username as password in this example
-		log.Printf("Failed to assess %s is %s", username, req.Password)
+		log.Print("Invalid password")
 		return defaultErrorResponse, nil
 	}
 

@@ -9,6 +9,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"net/url"
 	"os"
 	"time"
 
@@ -118,8 +119,25 @@ func createServer(listenAddr string, userClient proto.UserServiceClient, manager
 	}
 
 	router.HandleFunc("/authorize", func(w http.ResponseWriter, r *http.Request) {
-		err := srv.HandleAuthorizeRequest(w, r)
+		sess, err := session.Start(r.Context(), w, r)
 		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		var form url.Values
+		if v, ok := sess.Get("returnUri"); ok {
+			form = v.(url.Values)
+		}
+		r.Form = form
+
+		sess.Delete("returnUri")
+		if err := sess.Save(); err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+
+		if err := srv.HandleAuthorizeRequest(w, r); err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 		}
 	})
@@ -145,7 +163,6 @@ func createServer(listenAddr string, userClient proto.UserServiceClient, manager
 					return
 				}
 			}
-			fmt.Println(r.Form)
 
 			resp, err := userClient.UserByUsernamePassword(r.Context(), &proto.UsernamePasswordRequest{
 				Username: r.Form.Get("username"),
@@ -161,7 +178,8 @@ func createServer(listenAddr string, userClient proto.UserServiceClient, manager
 				http.Error(w, resp.Error.Message, http.StatusInternalServerError)
 				return
 			}
-			fmt.Println(resp.User)
+
+			log.Printf("Allow access to '%s'", resp.User.Username)
 
 			s.Set("userId", resp.User.UserID)
 			s.Save()
@@ -181,6 +199,11 @@ func createServer(listenAddr string, userClient proto.UserServiceClient, manager
 			return
 		}
 
+		if r.Method != http.MethodPost && r.Method != http.MethodGet {
+			http.Error(w, "Invalid method", http.StatusMethodNotAllowed)
+			return
+		}
+
 		userId, ok := s.Get("userId")
 		if !ok {
 			http.Error(w, "userId not found", http.StatusInternalServerError)
@@ -193,12 +216,35 @@ func createServer(listenAddr string, userClient proto.UserServiceClient, manager
 			return
 		}
 
+		if r.Method == http.MethodPost {
+			err = srv.HandleAuthorizeRequest(w, r)
+			if err != nil {
+				log.Printf("Error handling authorizeRequest: %v", err)
+				http.Error(w, err.Error(), http.StatusBadRequest)
+			}
+			return
+		}
+
 		if resp.Error != nil {
 			http.Error(w, resp.Error.Message, int(resp.Error.Code))
 			return
 		}
 
 		html(w, r, "static/auth.html")
+	})
+
+	router.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		code := r.URL.Query().Get("code")
+
+		var tokenUrl string
+		if code != "" {
+			tokenUrl = fmt.Sprintf("/token?grant_type=authorization_code&client_id=anything&redirect_uri=http://localhost:9096&code=%s&code_verifier=s256example", code)
+		} else {
+			tokenUrl = fmt.Sprintf("/authorize?response_type=code&client_id=anything&redirect_uri=http://localhost:9096&scope=read&state=my_state&code_challenge_method=S256&code_challenge=Qn3Kywp0OiU4NK_AFzGPlmrcYJDJ13Abj_jdL08Ahg8=")
+		}
+
+		w.Header().Set("Location", tokenUrl)
+		w.WriteHeader(http.StatusFound)
 	})
 
 	return httpServer
@@ -249,9 +295,32 @@ func html(w http.ResponseWriter, r *http.Request, path string) {
 
 func userAuthenticationHandler(client proto.UserServiceClient) server.UserAuthorizationHandler {
 	return func(w http.ResponseWriter, r *http.Request) (userID string, err error) {
-		r.ParseForm()
-		log.Println("userAuthenticationHandler:", r.Form)
+		sess, err := session.Start(r.Context(), w, r)
+		if err != nil {
+			return
+		}
 
-		return "", errors.New("userAuthenticationHandler: Not yet implemented")
+		uid, ok := sess.Get("userId")
+		if !ok {
+			if r.Form == nil {
+				if err = r.ParseForm(); err != nil {
+					return
+				}
+			}
+
+			sess.Set("returnUri", r.Form)
+			err = sess.Save()
+
+			w.Header().Set("Location", "/login")
+			w.WriteHeader(http.StatusFound)
+
+			return
+		}
+
+		userID = uid.(string)
+		sess.Delete("userId")
+		err = sess.Save()
+
+		return
 	}
 }

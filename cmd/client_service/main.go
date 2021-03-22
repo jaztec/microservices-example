@@ -21,6 +21,7 @@ type Server struct {
 }
 
 func (s *Server) ClientByID(_ context.Context, req *proto.ClientByIDRequest) (*proto.ClientByIDResponse, error) {
+	log.Printf("Fetching client for ID '%s'", req.Id)
 	return &proto.ClientByIDResponse{
 		Client: &proto.Client{
 			Id:        req.Id,
@@ -29,8 +30,8 @@ func (s *Server) ClientByID(_ context.Context, req *proto.ClientByIDRequest) (*p
 			DeletedAt: nil,
 			ExpiredAt: 0,
 			Code:      "",
-			Secret:    "999999",
-			Domain:    "",
+			Secret:    "42",
+			Domain:    "http://localhost:9096",
 			UserID:    "",
 			Access:    "",
 			Refresh:   "",

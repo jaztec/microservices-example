@@ -1,5 +1,7 @@
 package microservice_example
 
+import "log"
+
 type Client struct {
 	ID        string
 	ExpiredAt int64
@@ -23,4 +25,14 @@ func (c *Client) GetDomain() string {
 }
 func (c *Client) GetUserID() string {
 	return c.UserID
+}
+
+func (c *Client) VerifyPassword(password string) (ok bool) {
+	if password == "" {
+		log.Print("TODO Wrap client interface for PKCE. Empty secret")
+		ok = true
+	} else {
+		ok = password == c.Secret
+	}
+	return
 }
