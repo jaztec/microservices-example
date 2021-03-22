@@ -1,10 +1,24 @@
+# Microservices example
 
-#### Client credentials
+This is an experimental ground-up microservices example. It uses mTLS 
+to communicate between the  different programs. 
 
-http://localhost:9096/token?grant_type=client_credentials&client_id=anything&client_secret=42&scope=read
+The repo uses [`docker`](https://docs.docker.com/get-docker/) and 
+[`docker-compose`](https://docs.docker.com/compose/install/). 
 
+Pull the repository and run the following commands from the project 
+directory:
 
-#### PKCE login
+```bash
+$ docker-compose up --build
+```
+ 
+This should get you a running cloud behind `http://localhost:9096`. 
+Going there takes you to a login page that is wired for the example. The 
+credentials are simply `test` and `test`.
 
-http://localhost:9096/authorize?response_type=code&client_id=anything&redirect_uri=http://localhost:9096&scope=read&state=DAFFY&code_challenge_method=S256&code_challenge=Qn3Kywp0OiU4NK_AFzGPlmrcYJDJ13Abj_jdL08Ahg8=
+Alternatively you can use the client credentials grant, that works with any
+`client_id` and `client_secret` as `42`:
+
+`http://localhost:9096/token?grant_type=client_credentials&client_id=anything&client_secret=42&scope=read`
 
