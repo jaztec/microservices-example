@@ -25,3 +25,4 @@ Alternatively you can use the client credentials grant, that works with any
 
 `http://localhost:9096/token?grant_type=client_credentials&client_id=anything&client_secret=42&scope=read`
 
+
