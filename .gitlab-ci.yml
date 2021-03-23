@@ -3,4 +3,4 @@ stages:
 
 test:app:
   script:
-    @make test
+    - make test
