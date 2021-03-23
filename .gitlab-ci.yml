@@ -3,4 +3,5 @@ stages:
 
 test:app:
   script:
-    - make test
+    - go test ./... -bench=. -race -timeout 10000ms -coverprofile cover.out
+    - go tool cover -func=cover.out
