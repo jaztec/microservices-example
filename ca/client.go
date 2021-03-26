@@ -22,6 +22,8 @@ type CAClient struct {
 	conn *grpc.ClientConn
 }
 
+// CertPool returns a native CertPool construct fully loaded with our trusted certificates. It can be used
+// directly in a tls.Config{}
 func (c *CAClient) CertPool(ctx context.Context, host string) (*x509.CertPool, error) {
 	if c.conn == nil {
 		return nil, errors.New("client connection not yet available")
@@ -40,6 +42,7 @@ func (c *CAClient) CertPool(ctx context.Context, host string) (*x509.CertPool, e
 	return pool, nil
 }
 
+// The Certificate function fetches a certificate from the `ca_service` for us.
 func (c *CAClient) Certificate(ctx context.Context, host string, side Type) (tls.Certificate, []byte, error) {
 	client := proto.NewCAManagerClient(c.conn)
 	resp, err := client.Certificate(ctx, &proto.CertificateRequest{
