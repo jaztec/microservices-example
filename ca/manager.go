@@ -39,18 +39,24 @@ func WithAllowedClients(clients []string) initFn {
 }
 
 type CAManager struct {
-	ca      *x509.Certificate
-	root    []byte
+	// we store the ca cert to sign other certificates
+	ca *x509.Certificate
+	// and the PEM encoded bytes of root as well
+	root []byte
+	// privKey is used for signing other certs as well
 	privKey *rsa.PrivateKey
 
 	hosts   [][]byte
 	clients [][]byte
 
+	// lists of allowed and issued hosts
 	allowedHosts   []string
 	allowedClients []string
 	issuedHosts    []string
 	issuedClients  []string
 
+	// this line assures we have forward compatibility with our protobuf files. The proto.UnimplementedCAManagerServer
+	// will make sure all required stubs are present and this struct an be used as the intended interface
 	proto.UnimplementedCAManagerServer
 }
 
