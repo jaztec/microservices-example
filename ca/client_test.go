@@ -1,9 +1,9 @@
 package ca_test
 
 import (
+	"github.com/jaztec/microservice-example/ca"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"gitlab.jaztec.info/jaztec/microservice-example/ca"
 )
 
 var _ = Describe("Client", func() {

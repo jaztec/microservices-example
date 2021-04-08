@@ -10,10 +10,10 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 
-	microservice_example "gitlab.jaztec.info/jaztec/microservice-example"
+	microservice_example "github.com/jaztec/microservice-example"
 
 	"github.com/go-oauth2/oauth2/v4"
-	"gitlab.jaztec.info/jaztec/microservice-example/proto"
+	"github.com/jaztec/microservice-example/proto"
 )
 
 type Store struct {

@@ -8,8 +8,8 @@ import (
 
 	"google.golang.org/grpc/credentials"
 
-	"gitlab.jaztec.info/jaztec/microservice-example/ca"
-	"gitlab.jaztec.info/jaztec/microservice-example/proto"
+	"github.com/jaztec/microservice-example/ca"
+	"github.com/jaztec/microservice-example/proto"
 	"google.golang.org/grpc"
 )
 

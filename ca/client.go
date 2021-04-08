@@ -14,7 +14,7 @@ import (
 
 	"google.golang.org/grpc/credentials"
 
-	"gitlab.jaztec.info/jaztec/microservice-example/proto"
+	"github.com/jaztec/microservice-example/proto"
 	"google.golang.org/grpc"
 )
 

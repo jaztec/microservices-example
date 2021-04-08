@@ -7,13 +7,13 @@ import (
 	"net"
 	"os"
 
-	"gitlab.jaztec.info/jaztec/microservice-example/ca"
+	"github.com/jaztec/microservice-example/ca"
 
 	"google.golang.org/grpc/credentials"
 
 	"google.golang.org/grpc"
 
-	"gitlab.jaztec.info/jaztec/microservice-example/proto"
+	"github.com/jaztec/microservice-example/proto"
 )
 
 type Server struct {

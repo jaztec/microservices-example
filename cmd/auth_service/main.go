@@ -16,7 +16,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 
-	"gitlab.jaztec.info/jaztec/microservice-example/proto"
+	"github.com/jaztec/microservice-example/proto"
 
 	"github.com/dgrijalva/jwt-go"
 	"github.com/go-oauth2/oauth2/v4"
@@ -28,8 +28,8 @@ import (
 	"github.com/go-oauth2/oauth2/v4/server"
 	"github.com/go-oauth2/oauth2/v4/store"
 	"github.com/gorilla/mux"
-	"gitlab.jaztec.info/jaztec/microservice-example/auth"
-	"gitlab.jaztec.info/jaztec/microservice-example/ca"
+	"github.com/jaztec/microservice-example/auth"
+	"github.com/jaztec/microservice-example/ca"
 )
 
 //.well-known/jwks.json

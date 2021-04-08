@@ -12,7 +12,7 @@ import (
 	"math/big"
 	"time"
 
-	"gitlab.jaztec.info/jaztec/microservice-example/proto"
+	"github.com/jaztec/microservice-example/proto"
 )
 
 var ()

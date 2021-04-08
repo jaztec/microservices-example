@@ -10,9 +10,9 @@ import (
 
 	"golang.org/x/crypto/bcrypt"
 
-	"gitlab.jaztec.info/jaztec/microservice-example/proto"
+	"github.com/jaztec/microservice-example/proto"
 
-	"gitlab.jaztec.info/jaztec/microservice-example/ca"
+	"github.com/jaztec/microservice-example/ca"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 )

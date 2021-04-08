@@ -1,4 +1,4 @@
-module gitlab.jaztec.info/jaztec/microservice-example
+module github.com/jaztec/microservice-example
 
 go 1.16
 

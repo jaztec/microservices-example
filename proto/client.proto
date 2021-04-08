@@ -3,7 +3,7 @@ syntax = "proto3";
 import "error.proto";
 import "google/protobuf/timestamp.proto";
 
-option go_package = "gitlab.jaztec.info/jaztec/microservice-example/proto";
+option go_package = "github.com/jaztec/microservice-example/proto";
 
 package proto;
 

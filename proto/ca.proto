@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-option go_package = "gitlab.jaztec.info/jaztec/microservice-example/proto";
+option go_package = "github.com/jaztec/microservice-example/proto";
 
 service CAManager {
   rpc CACertificate(CertificateRequest) returns (CAResponse) {}

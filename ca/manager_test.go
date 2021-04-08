@@ -5,10 +5,10 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 
+	"github.com/jaztec/microservice-example/ca"
+	"github.com/jaztec/microservice-example/proto"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"gitlab.jaztec.info/jaztec/microservice-example/ca"
-	"gitlab.jaztec.info/jaztec/microservice-example/proto"
 )
 
 var _ = Describe("Manager", func() {
