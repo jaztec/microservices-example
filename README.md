@@ -13,6 +13,8 @@ Pull the repository and run the following commands from the project
 directory:
 
 ```bash
+$ git clone https://github.com/jaztec/microservices-example.git 
+$ cd microservices-example
 $ docker-compose up --build
 ```
  
