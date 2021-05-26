@@ -19,6 +19,7 @@ LDFLAGS=-v -ldflags "-s -w -X=main.Version=$(VERSION) -X=main.Build=$(BUILD)"
 all: build
 
 build:  ## Build the binary file
+	@GOPATH=$(GOPATH) GOBIN=$(GOBIN) go build -mod mod $(LDFLAGS) -v -o $(GOBIN)/api_service $(CMD)/api_service
 	@GOPATH=$(GOPATH) GOBIN=$(GOBIN) go build -mod mod $(LDFLAGS) -v -o $(GOBIN)/auth_service $(CMD)/auth_service
 	@GOPATH=$(GOPATH) GOBIN=$(GOBIN) go build -mod mod $(LDFLAGS) -v -o $(GOBIN)/user_service $(CMD)/user_service
 	@GOPATH=$(GOPATH) GOBIN=$(GOBIN) go build -mod mod $(LDFLAGS) -v -o $(GOBIN)/client_service $(CMD)/client_service

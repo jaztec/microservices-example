@@ -67,3 +67,17 @@ RUN mkdir -p /var/log/app \
 USER app-user
 
 CMD ["/usr/bin/app"]
+
+FROM debian:buster-slim AS api_service
+
+COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
+COPY --from=builder /etc/passwd /etc/passwd
+
+COPY --from=builder /opt/local/bin/api_service /usr/bin/app
+
+RUN mkdir -p /var/log/app \
+    && chown -R app-user /var/log/app
+
+USER app-user
+
+CMD ["/usr/bin/app"]

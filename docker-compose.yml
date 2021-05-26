@@ -15,6 +15,24 @@ services:
       - 9096:9096
     depends_on:
       - ca_service
+  api_service:
+    build:
+      context: .
+      target: api_service
+    links:
+      - auth_service
+      - client_service
+      - user_service
+    environment:
+      CLIENT_ADDR: client_service:50051
+      LISTEN_ADDR: :9097
+      USER_ADDR: user_service:50051
+      AUTH_ADDR: http://auth_service:9096
+    ports:
+      - 9097:9097
+    depends_on:
+      - ca_service
+      - auth_service
   client_service:
     build:
       context: .

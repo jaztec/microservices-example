@@ -86,7 +86,7 @@ func NewCAManager(opts ...initFn) (*CAManager, error) {
 }
 
 func (m *CAManager) CACertificate(_ context.Context, req *proto.CertificateRequest) (*proto.CAResponse, error) {
-	if !hostAllowed(req.Host, m.allowedHosts) {
+	if !hostAllowed(req.Host, m.allowedHosts) && !hostAllowed(req.Host, m.allowedClients) {
 		return nil, fmt.Errorf("host '%s' is not allowed", req.Host)
 	}
 

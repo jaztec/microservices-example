@@ -5,6 +5,7 @@ import (
 	"context"
 	"crypto/tls"
 	"embed"
+	"encoding/pem"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -31,8 +32,6 @@ import (
 	"github.com/jaztec/microservice-example/auth"
 	"github.com/jaztec/microservice-example/ca"
 )
-
-//.well-known/jwks.json
 
 //go:embed static/*
 var static embed.FS
@@ -86,12 +85,14 @@ func main() {
 	}
 	userClient := proto.NewUserServiceClient(conn)
 
-	srv := createServer(listenAddr, userClient, getManager(clientStore), userAuthenticationHandler(userClient))
+	manager, cert := getManager(clientStore)
+
+	srv := createServer(listenAddr, userClient, manager, cert, userAuthenticationHandler(userClient))
 
 	log.Fatal(srv.ListenAndServe())
 }
 
-func createServer(listenAddr string, userClient proto.UserServiceClient, manager oauth2.Manager, userHandler server.UserAuthorizationHandler) *http.Server {
+func createServer(listenAddr string, userClient proto.UserServiceClient, manager oauth2.Manager, cert tls.Certificate, userHandler server.UserAuthorizationHandler) *http.Server {
 	srv := server.NewDefaultServer(manager)
 
 	srv.SetAllowGetAccessRequest(true)
@@ -118,6 +119,14 @@ func createServer(listenAddr string, userClient proto.UserServiceClient, manager
 		MaxHeaderBytes: 1 << 20,
 	}
 
+	router.HandleFunc("/.well-known/cert", func(w http.ResponseWriter, t *http.Request) {
+		w.Header().Set("Content-Type", "text/plain")
+		_, _ = w.Write(pem.EncodeToMemory(&pem.Block{
+			Type:  "CERTIFICATE",
+			Bytes: cert.Certificate[0],
+		}))
+	})
+
 	router.HandleFunc("/authorize", func(w http.ResponseWriter, r *http.Request) {
 		sess, err := session.Start(r.Context(), w, r)
 		if err != nil {
@@ -138,6 +147,7 @@ func createServer(listenAddr string, userClient proto.UserServiceClient, manager
 		}
 
 		if err := srv.HandleAuthorizeRequest(w, r); err != nil {
+			log.Printf("An error occurred during authorization: %+v", err)
 			http.Error(w, err.Error(), http.StatusBadRequest)
 		}
 	})
@@ -250,12 +260,12 @@ func createServer(listenAddr string, userClient proto.UserServiceClient, manager
 	return httpServer
 }
 
-func getManager(clientStore *auth.Store) oauth2.Manager {
+func getManager(clientStore *auth.Store) (oauth2.Manager, tls.Certificate) {
 	client, err := ca.NewCAClient("auth_service")
 	if err != nil {
 		panic(err)
 	}
-	_, key, err := client.Certificate(context.Background(), "jwt_token", ca.Client)
+	cert, key, err := client.Certificate(context.Background(), "jwt_token", ca.Client)
 	if err != nil {
 		panic(err)
 	}
@@ -263,10 +273,10 @@ func getManager(clientStore *auth.Store) oauth2.Manager {
 	manager := manage.NewDefaultManager()
 	// token memory store
 	manager.MustTokenStorage(store.NewMemoryTokenStore())
-	manager.MapAccessGenerate(generates.NewJWTAccessGenerate(time.Now().String(), key, jwt.SigningMethodHS512))
+	manager.MapAccessGenerate(generates.NewJWTAccessGenerate(time.Now().String(), key, jwt.SigningMethodRS256))
 
 	manager.MapClientStorage(clientStore)
-	return manager
+	return manager, cert
 }
 
 func html(w http.ResponseWriter, r *http.Request, path string) {
