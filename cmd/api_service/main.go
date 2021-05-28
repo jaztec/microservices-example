@@ -1,10 +1,12 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"crypto/rsa"
 	"crypto/tls"
 	"crypto/x509"
+	"embed"
 	"encoding/json"
 	"encoding/pem"
 	"errors"
@@ -26,6 +28,15 @@ import (
 	"github.com/jaztec/microservice-example/ca"
 	"github.com/jaztec/microservice-example/proto"
 )
+
+//go:embed static/*
+var static embed.FS
+
+type postData struct {
+	Query     string                 `json:"query"`
+	Operation string                 `json:"operation"`
+	Variables map[string]interface{} `json:"variables"`
+}
 
 func main() {
 	clientAddr := os.Getenv("CLIENT_ADDR")
@@ -127,23 +138,66 @@ func startServer(listenAddr string, jwtKey *rsa.PublicKey, schema graphql.Schema
 		MaxHeaderBytes: 1 << 20,
 	}
 
+	router.HandleFunc("/graphiql", func(w http.ResponseWriter, r *http.Request) {
+		f, err := static.Open("static/index.html")
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		defer f.Close()
+
+		fi, err := f.Stat()
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		content, err := ioutil.ReadAll(f)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		reader := bytes.NewReader(content)
+		http.ServeContent(w, r, fi.Name(), fi.ModTime(), reader)
+	})
+
 	router.HandleFunc("/graphql", func(w http.ResponseWriter, r *http.Request) {
+		var p postData
+		if err := json.NewDecoder(r.Body).Decode(&p); err != nil {
+			w.WriteHeader(400)
+			return
+		}
 		result := graphql.Do(graphql.Params{
-			Schema:        schema,
-			RequestString: r.URL.Query().Get("query"),
+			Context:        r.Context(),
+			Schema:         schema,
+			RequestString:  p.Query,
+			VariableValues: p.Variables,
+			OperationName:  p.Operation,
 		})
-		json.NewEncoder(w).Encode(result)
+		if err := json.NewEncoder(w).Encode(result); err != nil {
+			fmt.Printf("could not write result to response: %s", err)
+		}
 	})
 
 	router.Use(func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			auth := r.Header.Get("Authorization")
-
-			if auth == "" || !strings.HasPrefix(auth, "Bearer ") {
-				http.Error(w, "Unauthorized", http.StatusUnauthorized)
+			if r.URL.Path == "/graphiql" {
+				next.ServeHTTP(w, r)
 				return
 			}
-			token := strings.ReplaceAll(auth, "Bearer ", "")
+			auth := r.Header.Get("Authorization")
+
+			var token string
+			if auth == "" || !strings.HasPrefix(auth, "Bearer ") {
+				token = r.URL.Query().Get("token")
+				if token == "" {
+					http.Error(w, "Unauthorized", http.StatusUnauthorized)
+					return
+				}
+			} else {
+				token = strings.ReplaceAll(auth, "Bearer ", "")
+			}
 			log.Printf("Authorizing with %s", token)
 
 			err := jws.Verify(token, jwtKey)
