@@ -243,20 +243,6 @@ func createServer(listenAddr string, userClient proto.UserServiceClient, manager
 		html(w, r, "static/auth.html")
 	})
 
-	router.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		code := r.URL.Query().Get("code")
-
-		var tokenUrl string
-		if code != "" {
-			tokenUrl = fmt.Sprintf("/token?grant_type=authorization_code&client_id=anything&redirect_uri=http://localhost:9096&code=%s&code_verifier=s256example", code)
-		} else {
-			tokenUrl = fmt.Sprintf("/authorize?response_type=code&client_id=anything&redirect_uri=http://localhost:9096&scope=read&state=my_state&code_challenge_method=S256&code_challenge=Qn3Kywp0OiU4NK_AFzGPlmrcYJDJ13Abj_jdL08Ahg8=")
-		}
-
-		w.Header().Set("Location", tokenUrl)
-		w.WriteHeader(http.StatusFound)
-	})
-
 	return httpServer
 }
 

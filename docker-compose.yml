@@ -28,6 +28,7 @@ services:
       LISTEN_ADDR: :9097
       USER_ADDR: user_service:50051
       AUTH_ADDR: http://auth_service:9096
+      AUTH_ADDR_EXT: http://localhost:9096
     ports:
       - 9097:9097
     depends_on:

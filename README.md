@@ -17,7 +17,7 @@ $ cd microservices-example
 $ docker-compose up --build
 ```
  
-This should get you a running setup at `http://localhost:9096`. 
+This should get you a running setup at `http://localhost:9097`. 
 Going there takes you to a login page that is wired for the example. The 
 credentials are simply `test` and `test`.
 

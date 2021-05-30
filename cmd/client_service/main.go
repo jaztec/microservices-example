@@ -31,7 +31,7 @@ func (s *Server) ClientByID(_ context.Context, req *proto.ClientByIDRequest) (*p
 			ExpiredAt: 0,
 			Code:      "",
 			Secret:    "42",
-			Domain:    "http://localhost:9096",
+			Domain:    "http://localhost:9097",
 			UserID:    "",
 			Access:    "",
 			Refresh:   "",

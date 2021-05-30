@@ -59,6 +59,11 @@ func main() {
 		panic("No valid AUTH_ADDR received")
 	}
 
+	authAddrExt := os.Getenv("AUTH_ADDR_EXT")
+	if authAddrExt == "" {
+		panic("No valid AUTH_ADDR_EXT received")
+	}
+
 	caClient, err := ca.NewCAClient("api_service")
 	if err != nil {
 		panic(err)
@@ -100,13 +105,17 @@ func main() {
 		panic(err)
 	}
 
-	err = startServer(listenAddr, jwtKey, schema)
+	err = startServer(listenAddr, authAddr, authAddrExt, jwtKey, schema)
 	if err != nil {
 		log.Fatal(err)
 	}
 }
 
 func fetchJWTKey(authAddr string) (*rsa.PublicKey, error) {
+	// TODO ugly way to make sure the auth container is up and running
+	tC := time.NewTimer(5 * time.Second)
+	<-tC.C
+
 	res, err := http.Get(authAddr + "/.well-known/cert")
 	if err != nil {
 		return nil, err
@@ -127,7 +136,7 @@ func fetchJWTKey(authAddr string) (*rsa.PublicKey, error) {
 	return cert.PublicKey.(*rsa.PublicKey), nil
 }
 
-func startServer(listenAddr string, jwtKey *rsa.PublicKey, schema graphql.Schema) error {
+func startServer(listenAddr string, authAddr string, authAddrExt string, jwtKey *rsa.PublicKey, schema graphql.Schema) error {
 	router := mux.NewRouter()
 
 	httpServer := &http.Server{
@@ -137,6 +146,26 @@ func startServer(listenAddr string, jwtKey *rsa.PublicKey, schema graphql.Schema
 		WriteTimeout:   10 * time.Second,
 		MaxHeaderBytes: 1 << 20,
 	}
+
+	router.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		code := r.URL.Query().Get("code")
+
+		var redirect string
+		if code == "" {
+			redirect = fmt.Sprintf("%s/authorize?response_type=code&client_id=anything&redirect_uri=http://localhost:9097&scope=read&state=my_state&code_challenge_method=S256&code_challenge=Qn3Kywp0OiU4NK_AFzGPlmrcYJDJ13Abj_jdL08Ahg8=", authAddrExt)
+		} else {
+			tokenUrl := fmt.Sprintf("%s/token?grant_type=authorization_code&client_id=anything&redirect_uri=http://localhost:9097&code=%s&code_verifier=s256example", authAddr, code)
+			token, err := fetchToken(tokenUrl)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+			redirect = fmt.Sprintf("/graphiql?token=%s", token)
+		}
+
+		w.Header().Set("Location", redirect)
+		w.WriteHeader(http.StatusFound)
+	})
 
 	router.HandleFunc("/graphiql", func(w http.ResponseWriter, r *http.Request) {
 		f, err := static.Open("static/index.html")
@@ -182,7 +211,7 @@ func startServer(listenAddr string, jwtKey *rsa.PublicKey, schema graphql.Schema
 
 	router.Use(func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			if r.URL.Path == "/graphiql" {
+			if r.URL.Path != "/graphql" {
 				next.ServeHTTP(w, r)
 				return
 			}
@@ -311,4 +340,27 @@ func createSchema(userClient proto.UserServiceClient, clientClient proto.ClientS
 			},
 		),
 	})
+}
+
+func fetchToken(tokenUrl string) (string, error) {
+	resp, err := http.Get(tokenUrl)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return "", err
+	}
+
+	type envelope struct {
+		AccessToken string `json:"access_token"`
+	}
+	var e envelope
+	err = json.Unmarshal(body, &e)
+	if err != nil {
+		return "", err
+	}
+	return e.AccessToken, nil
 }
